@@ -8,11 +8,16 @@ public enum WhistleAction {
 let whistleFactory = WhistleFactory()
 
 public func whistle(murmur: Murmur, action: WhistleAction = .Show(1.5)) {
+  guard !WhistleBlows() else { return }
   whistleFactory.whistler(murmur, action: action)
 }
 
 public func calm(after after: NSTimeInterval = 0) {
   whistleFactory.calm(after: after)
+}
+
+public func WhistleBlows() -> Bool {
+  return whistleFactory.blows
 }
 
 public class WhistleFactory: UIViewController {
@@ -31,6 +36,7 @@ public class WhistleFactory: UIViewController {
   public var duration: NSTimeInterval = 2
   public var viewController: UIViewController?
   public var hideTimer = NSTimer()
+  public var blows = false
 
   // MARK: - Initializers
 
@@ -87,6 +93,9 @@ public class WhistleFactory: UIViewController {
   }
 
   public func setupFrames() {
+    whistleWindow = UIWindow()
+    setupWindow()
+
     let labelWidth = UIScreen.mainScreen().bounds.width
     let defaultHeight = titleLabelHeight
 
@@ -123,12 +132,15 @@ public class WhistleFactory: UIViewController {
 
   public func present() {
     hideTimer.invalidate()
+    blows = true
 
     let initialOrigin = whistleWindow.frame.origin.y
     whistleWindow.frame.origin.y = initialOrigin - titleLabelHeight
     whistleWindow.makeKeyAndVisible()
     UIView.animateWithDuration(0.2, animations: {
       self.whistleWindow.frame.origin.y = initialOrigin
+    }, completion: { _ in
+      self.blows = false
     })
   }
 
@@ -147,7 +159,7 @@ public class WhistleFactory: UIViewController {
 
   public func calm(after after: NSTimeInterval) {
     hideTimer.invalidate()
-    hideTimer = NSTimer.scheduledTimerWithTimeInterval(duration, target: self, selector: #selector(WhistleFactory.timerDidFire), userInfo: nil, repeats: false)
+    hideTimer = NSTimer.scheduledTimerWithTimeInterval(after, target: self, selector: #selector(WhistleFactory.timerDidFire), userInfo: nil, repeats: false)
   }
 
   // MARK: - Timer methods
